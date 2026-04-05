@@ -1,0 +1,12 @@
+camera: hik
+odom2camera:
+  # 英雄
+  xyz: '"0.163 0.0 -0.0635"'
+  rpy: '"0.0 0.0 0.0"'
+  lob_xyz: '"0.08336 0.1265 -0.034"'
+  lob_rpy: '"0.0 0.05236 0.0"'
+
+detector_log_level: INFO
+tracker_log_level: INFO
+serial_log_level: INFO
+simulator_log_level: INFO

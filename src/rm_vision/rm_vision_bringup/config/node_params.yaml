@@ -1,0 +1,146 @@
+/video_publisher:
+  ros__parameters:
+    video_path: "/home/bandiera/Desktop/vision_dev/src/rm_vision/rm_vision_bringup/assert/spin.avi"
+    frame_id: camera_optical_frame
+    camera_name: gimbal_camera
+    camera_info_url: package://rm_vision_bringup/config/camera_info.yaml
+    loop: false
+    use_video_fps: true
+    playback_rate: 1.0
+    publish_fps: 0.0
+
+/camera_node:
+  ros__parameters:
+    camera_name: gimbal_camera
+    camera_name_lob: gimbal_camera_lob
+    camera_info_url: package://rm_vision_bringup/config/camera_info.yaml
+    camera_info_url_lob: "package://rm_vision_bringup/config/camera_info_lob.yaml" # 吊射相机内参文件
+    device_index: 0 # 默认相机设备索引
+    device_index_lob: 0
+    frame_id: camera_optical_frame
+    frame_id_lob: camera_optical_frame_lob
+    exposure_time: 2500.0
+    gain: 6.0
+    autocap: true
+    frame_rate: 80.0
+    rotate: 0 # 0: 不旋转, 1: 顺时针 90°, 2: 180°, 3: 逆时针 90°
+
+# 串口节点
+/serial_driver:
+  ros__parameters:
+    timestamp_offset: 0.005 #时间戳偏移量
+    vid: "16d0"
+    pid: "1492"
+
+# 装甲板识别节点
+/armor_detector:
+  ros__parameters:
+    debug: false
+
+    use_corner_corrector: false # 是否使用灯条角点校正
+
+    use_pose_optimizer: false # 是否使用先验位姿优化器
+    target_frame: gimbal_odom # 目标坐标系
+
+    optimizer:
+      standard_pitch_deg: 15.0
+      outpost_pitch_deg: -15.0
+      max_pitch_deviation: 10.0
+      max_roll_deviation: 10.0
+      max_iterations: 20
+      optimize_method: RANGE_SHORT_LM
+      range_search_half_range_deg: 70.0
+      range_search_coarse_step_deg: 1.0
+      range_search_fine_range_deg: 2.0
+      range_search_fine_step_deg: 0.05
+
+    pnp_filter:
+      use_new_pnp_filter_method: false # 是否使用新的 PnP 解算结果过滤方法
+      max_normal_dot: 0.0 # 法线点积阈值，越小越严格
+      reproj_weight: 1.0 # 重投影误差权重
+      normal_weight: 0.5 # 法线惩罚权重
+
+    detect_color: 1 # 0: red, 1: blue
+    binary_upper_thres: 255
+    binary_lower_thres: 160
+
+    light.min_ratio: 0.1 # 灯条 (长/宽) 的比值 Detector::isLight 函数中判断是否为灯条
+    armor.min_light_ratio: 0.8 # 装甲板 (长/宽) 的比值 Detector::isArmor 函数中判断是否为装甲板
+
+    classifier_threshold: 0.6
+    ignore_classes: ["negative"]
+
+# 装甲板观测节点
+/armor_tracker:
+  ros__parameters:
+    target_frame: gimbal_odom # 目标坐标系
+    max_armor_distance: 10.0 # 极限最远可观测装甲板距离
+
+    ekf:
+      sigma2_q_xyz: 0.005 # 位置坐标过程噪声方差
+      sigma2_q_yaw: 4.0 #偏航角过程噪声方差
+      sigma2_q_r: 65.0 #半径过程噪声方差
+      sigma2_q_xyz_outpost: 0.005 # 前哨站位置坐标过程噪声方差
+      sigma2_q_yaw_outpost: 2.0 # 前哨站偏航角过程噪声方差
+      sigma2_q_r_outpost: 0.0 # 前哨站半径过程噪声方差
+
+      r_xyz_factor: 0.0005 #位置坐标观测噪声协方差系数
+      r_yaw: 0.05 #偏航角观测噪声协方差
+
+    tracker: #标记{tracker 参数}
+      max_match_distance: 3.0
+      # max_match_yaw_diff: 0.85
+      maz_match_time_diff: 1.2
+
+      # 弹道解算
+      k: 0.0
+      bias_time: 0.06 # 65ms 发弹延迟
+      s_bias: 0.0
+      z_bias: 0.0
+      pitch_bias: 0.0
+      calculate_mode: true
+
+      tracking_thres: 5
+      lost_time_thres: 1.0
+
+      k_yaw: 0.0
+      k_pitch: 0.0
+
+      outpost:
+        outpost_cast_threshold: 0.18
+        outpost_dz: 0.10
+        outpost_r: 0.2765
+
+      table:
+        max_x: 22.0
+        min_x: 0.0
+        max_y: 3.0
+        min_y: -1.0
+        resolution: 0.01
+        filename: "42_117.bin"
+        max_x_lob: 22.0
+        min_x_lob: 0.0
+        max_y_lob: 3.0
+        min_y_lob: -1.0
+        resolution_lob: 0.01
+        filename_lob: "42_157_lob.bin"
+
+/hand_eye_calibrate_node:
+  ros__parameters:
+    image_topic: "/image_raw" # 图像话题名称
+    camera_info_topic: "/camera_info" # 相机信息话题名称
+    joint_states_topic: "/joint_states" # 关节状态话题名称
+    yaw_joint_name: "yaw_joint" # Yaw 关节名称
+    pitch_joint_name: "pitch_joint" # Pitch 关节名称
+
+    publish_debug_image: true # 是否发布调试图像
+    debug_image_topic: "/rm_hand_eye/debug_image" # 调试图像话题名称
+
+    board_cols: 11 # 标定板列数
+    board_rows: 8 # 标定板行数
+    square_size: 0.02 # 方格尺寸（米）
+
+    max_age_sec: 0.25 # 采样时用于过滤过旧检测结果的时间阈值（秒）
+    handeye_method: "TSAI" # 手眼标定方法：TSAI, PARK, HORAUD, ANDREFF, DANIILIDIS
+    invert_pitch_sign: false # 若云台 pitch 角正方向与预期相反，则置 true
+
